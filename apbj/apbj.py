@@ -3,16 +3,22 @@ import random
 __author__ = 'stick2020'
 
 
-# =============================================================================
 class Card(object):
     def __init__(self, suite=None, value=None):
         self.value = value
         self.suite = suite
         self.face_up = False
         self.name = "{0} of {1}".format(self.value, self.suite)
+        if self.value in ['10', 'jack', 'queen', 'king']:
+            self.bj_value = 10
+        elif self.value == 'ace':
+            # will set bj_value to 1 when necessary
+            self.bj_value = 11
+        else:
+            self.bj_value = int(self.value)
 
 
-# =============================================================================
+
 class Deck(object):
     def __init__(self):
         self.cards = [] # subclass should populate self.cards
@@ -34,7 +40,7 @@ class Deck(object):
     def _set_shuffle_point(self, percentage=66):
         pass
 
-
+# Todo: get rid of StandardDeck.  Merge it's code into Deck.
 # =============================================================================
 class StandardDeck(Deck):
     def __init__(self):
@@ -46,6 +52,7 @@ class StandardDeck(Deck):
         self.shuffle()
 
 
+# Todo: Get rid of Shoe.  Merge into BlackJackShoe
 # =============================================================================
 class Shoe(Deck):
     def __init__(self, list_of_decks):
@@ -128,9 +135,12 @@ class Hand(object):
 
 # =============================================================================
 class Player(object):
+    # Tracks Name, bank, hands, count (from his perspective) and playtype (aka decision making)
     def __init__(self, name, play_type='normal', bank=50.0):
+        # Todo: generate a unique player id
         self.name = name
         self.bank = bank
+        # Todo: hand should be a list of Hands (for splits)
         self.hand = Hand()
         self.count = 0
         self.play_type = PlayType(play_type)
