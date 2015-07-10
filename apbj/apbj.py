@@ -1,7 +1,7 @@
 import random
+from operator import attrgetter
 
 __author__ = 'stick2020'
-
 
 class Card(object):
     def __init__(self, suite=None, value=None):
@@ -17,94 +17,64 @@ class Card(object):
         else:
             self.bj_value = int(self.value)
 
+    def __repr__(self):
+        return self.name
 
 
 class Deck(object):
     def __init__(self):
-        self.cards = [] # subclass should populate self.cards
-        self.discard_pile = []
-        self.true_count = 0
-
-    def shuffle(self):
-        self.active_pile = self.cards[:]
-        random.shuffle(self.active_pile)
-        self.true_count = 0
-
-    def draw(self, num_of_cards=1):
-        cards = [self.active_pile.pop() for n in range(1, num_of_cards+1)]
-        return cards
-
-    def discard(self, card):
-        self.discard_pile.append(card)
-
-    def _set_shuffle_point(self, percentage=66):
-        pass
-
-# Todo: get rid of StandardDeck.  Merge it's code into Deck.
-# =============================================================================
-class StandardDeck(Deck):
-    def __init__(self):
-        super(StandardDeck, self).__init__()
+        self.cards = []
         suites = ['clubs', 'spades', 'hearts', 'diamonds']
         values = ['ace', '2', '3', '4', '5', '6', '7', '8', '9', '10',
                   'jack', 'queen', 'king']
         self.cards = [Card(s, v) for s in suites for v in values]
-        self.shuffle()
 
 
-# Todo: Get rid of Shoe.  Merge into BlackJackShoe
-# =============================================================================
-class Shoe(Deck):
-    def __init__(self, list_of_decks):
-        super(Shoe, self).__init__()
-        self.cards = [c for d in list_of_decks for c in d.cards]
-        self.shuffle()
-
-
-# =============================================================================
-class BlackJackShoe(Shoe):
+class BlackJackShoe(object):
     def __init__(self, decks):
-        super(BlackJackShoe, self).__init__(decks)
-        self.true_count = 0
+        self.cards = [c for d in decks for c in d.cards]
+        self.active_pile = self.cards[:]
+        self.shuffle()
 
     def draw(self, num_of_cards=1):
-        cards = super(BlackJackShoe, self).draw()
+        cards = []
+        for i in range(num_of_cards):
+            cards.append(self.active_pile.pop(num_of_cards))
+
         for c in cards:
-            if c.value == ('king'):
-                self.true_count -= 1
-            elif c.value == ('queen'):
-                self.true_count -= 1
-            elif c.value == ('jack'):
-                self.true_count -= 1
-            elif c.value == ('ace'):
-                self.true_count -= 1
-            elif int(c.value) == 10:
+            if c.bj_value >= 10:
                 self.true_count -= 1
             elif int(c.value) < 7:
                 self.true_count += 1
+
         return cards
 
     def shuffle(self):
-        super(BlackJackShoe, self).shuffle()
+        del self.active_pile[:]
+        self.active_pile = self.cards[:]
+        random.shuffle(self.active_pile)
+        self.discard_pile = []
         self.true_count = 0
 
-# =============================================================================
-class Hand(object):
-    def __init__(self):
-        self.reset()
 
-    def reset(self):
+class Hand(object):
+    def __init__(self, wager):
         self.cards = []
-        self.value = 0
+        self.bj_value = 0
         self.bust = False
         self.blackjack = False
-        self.wager = 0.00
+        self.wager = wager
+        self.insurance = False
+        self.surrender = False
 
     def is_bust(self):
         return self.bust
 
     def show_hand(self):
-        return self.cards
+        for c in self.cards:
+            c.face_up = True
+
+        return self.show_public_hand()
 
     def show_public_hand(self):
         face_up_cards = []
@@ -114,60 +84,56 @@ class Hand(object):
         return face_up_cards
 
 
-    def add_card(self, card, face_up=False):
-        self.cards.append(card)
-        if card.value in ['jack', 'queen','king']:
-            self.value += 10
-        elif card.value == 'ace':
-            if self.value > 10:
-                self.value += 1
-            else:
-                self.value += 11
-        else:
-            self.value += int(card.value)
+    def add_cards(self, cards):
+        self.cards.extend(cards)
+        self.cards.sort(key=lambda c: c.bj_value)
 
-        if (len(self.cards) == 2) and (self.value == 21):
+        self.bj_value = 0
+        for c in self.cards:
+            if c.bj_value == 11 and self.bj_value > 10:
+                c.bj_value = 1
+
+            self.bj_value += c.bj_value
+
+        if (len(self.cards) == 2) and (self.bj_value == 21):
            self.blackjack = True
 
-        if self.value > 21:
+        if self.bj_value > 21:
             self.bust = True
 
 
-# =============================================================================
 class Player(object):
     # Tracks Name, bank, hands, count (from his perspective) and playtype (aka decision making)
     def __init__(self, name, play_type='normal', bank=50.0):
         # Todo: generate a unique player id
         self.name = name
         self.bank = bank
-        # Todo: hand should be a list of Hands (for splits)
-        self.hand = Hand()
-        self.count = 0
+        self.hands = []
+        self.shoe_count = 0
+        self.hands_played = 0
+        self.rounds_played = 0
         self.play_type = PlayType(play_type)
 
     def bet(self, amt):
-        self.bank -=  amt
-        self.hand.wager = amt
+        del self.hands[:]
+        if amt < self.bank:
+            self.bank -=  amt
+            self.hands.append(Hand(amt))
 
-    def hit_or_stay(self, player):
-        # simple rules
-        if not(dealer):
-            if self.hand.value < 15:
-                return True # hit
-            return False # stay
-        else:
-            # todo update dealer hit rules
-            if self.hand.value < 17:
-                return True
-            else:
-                return False
-
-    def split(self):
-        # todo
+    def hit(self, hand):
+        # Todo: implement player.hit()
         pass
 
-    def double(self):
-        # todo
+    def split(self, hand):
+        # Todo: implement player.split()
+        pass
+
+    def double(self, hand):
+        # Todo: implement player.double()
+        pass
+
+    def surrender(self):
+        # Todo: implement player.surrender()
         pass
 
     def add_funds(self, amt):
