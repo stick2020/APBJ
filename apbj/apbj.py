@@ -105,6 +105,7 @@ class Hand(object):
 class Player(object):
     # Tracks Name, bank, hands, count (from his perspective) and playtype (aka decision making)
     def __init__(self, name, play_type='normal', bank=50.0):
+        # Todo: need to allow player to play multiple positions
         # Todo: generate a unique player id
         self.name = name
         self.bank = bank
@@ -112,11 +113,14 @@ class Player(object):
         self.shoe_count = 0
         self.hands_played = 0
         self.rounds_played = 0
-        self.play_type = PlayType(play_type)
+        #self.play_type = PlayType(play_type)
+
+    def __repr__(self):
+        return self.name
 
     def bet(self, amt):
         del self.hands[:]
-        if amt < self.bank:
+        if (amt < self.bank) and (amt > 0):
             self.bank -=  amt
             self.hands.append(Hand(amt))
 
@@ -140,7 +144,6 @@ class Player(object):
         self.bank += amt
 
 
-# =============================================================================
 class PlayType(object):
     Play_Type = ['normal', 'aggressive', 'random', 'conservative']
 
@@ -185,15 +188,14 @@ class PlayType(object):
 # =============================================================================
 class BlackJack(object):
     def __init__(self, deck):
-        self.round = 0
+        self.round = []
         self.deck = deck
         self.active_players=[]
         self.bank = 1000.00
 
+
     def phase_0(self, players):
-        # add or remove players to round
-        print '-'*40
-        print 'start of phase_0 (add players)'
+        # add or remove players to start round
         self.add_players(players)
 
     def phase_1(self):
@@ -350,32 +352,6 @@ class BlackJack(object):
     def add_funds(self, wager):
         self.bank += wager
 
-
-# =============================================================================
-if __name__ == '__main__':
-    decks = [StandardDeck() for d in range(1, 7)]
-    shoe = BlackJackShoe(decks)
-    rounds = 100
-
-    session = BlackJack(shoe)
-
-    players = [Player('stan'),
-               Player('david'),
-               Player('brooklyn'),
-               Player('mimi'),
-               Player('emma'),
-               Player('josh'),
-               Player('dealer')]
-
-    for round in range(rounds):
-         print "Round: {}".format(round)
-         session.phase_0(players)
-         session.phase_1()
-         session.phase_2()
-         session.phase_3()
-         #session.phase_4()
-         session.phase_5()
-         session.phase_6()
 
 
 

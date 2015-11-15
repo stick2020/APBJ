@@ -1,5 +1,7 @@
 from apbj import apbj
+
 __author__ = 'stick2020'
+
 
 def test_card_properties():
     c = apbj.Card('clubs', 'ace')
@@ -12,6 +14,7 @@ def test_card_properties():
     assert c.face_up == True
     c.bj_value = 1
     assert c.bj_value == 1
+
 
 def test_deck_properties():
     d = apbj.Deck()
@@ -30,6 +33,7 @@ def test_deck_properties():
     assert diamonds == 13
     assert kings == 4
 
+
 def test_bjshoe_properties():
     decks = [apbj.Deck(), apbj.Deck(), apbj.Deck()]
 
@@ -39,6 +43,7 @@ def test_bjshoe_properties():
     assert len(bjshoe.active_pile) == 154
     bjshoe.shuffle()
     assert len(bjshoe.active_pile) == 156
+
 
 def test_hand_properties():
     decks = [apbj.Deck(), apbj.Deck(), apbj.Deck()]
@@ -53,6 +58,7 @@ def test_hand_properties():
         card_count += 1
         assert len(h.cards) == card_count
 
+
 def test_hand_blackjack():
     cards2 = [apbj.Card('clubs', 'ace'), apbj.Card('clubs', 'queen')]
     h2 = apbj.Hand(5.00)
@@ -64,6 +70,7 @@ def test_hand_blackjack():
     h3.add_cards(cards3)
     assert h3.blackjack == False
 
+
 def test_hand_bust():
     cards4 = [apbj.Card('clubs', '9'), apbj.Card('clubs', 'queen')]
     h4 = apbj.Hand(5.00)
@@ -74,6 +81,7 @@ def test_hand_bust():
     h5 = apbj.Hand(5.00)
     h5.add_cards(cards5)
     assert h5.is_bust() == True
+
 
 def test_hand_aces():
     cards6 = [apbj.Card('clubs', 'ace'), apbj.Card('clubs', 'ace')]
@@ -90,3 +98,31 @@ def test_hand_aces():
     h8 = apbj.Hand(5.00)
     h8.add_cards(cards8)
     assert h8.bj_value == 15
+
+
+def test_player_properties():
+    cartman = apbj.Player('Cartman')
+    assert cartman.bank == 50
+    assert cartman.name == 'Cartman'
+
+    cartman.bet(5)
+    assert cartman.bank == 45
+
+    king = apbj.Card('clubs', 'king')
+    queen = apbj.Card('clubs', 'queen')
+    cartman.hands[0].add_cards([king])
+    cartman.hands[0].add_cards([queen])
+    assert cartman.hands[0].bj_value == 20
+
+
+def test_player_split_hand():
+    kyle = apbj.Player('Kyle')
+    kyle.bet(10)
+
+    cards = [apbj.Card('clubs', 'king'),
+             apbj.Card('hearts', 'king'),
+             apbj.Card('spades', 'king'),
+             apbj.Card('diamonds', 'king')]
+
+    kyle.hands[0].add_cards([cards[0], cards[1]])
+    kyle.hands[0].split(True)
